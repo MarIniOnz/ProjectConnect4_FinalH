@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import random
 from agents.common import GameState, BoardPiece, PlayerAction, check_end_state, apply_player_action
 from agents.agents_random.random import generate_move_random
@@ -48,11 +49,19 @@ class Tree_Node:
 
         while node.child is not None and not node.terminal:
 
-            ucb_values = [children.find_ucb1() for children in node.child]
-            if None in ucb_values:
-                node = node.child[np.random.randint(len(node.child))]
-            else:
-                node = node.child[np.argmax(ucb_values)]
+            node = node.find_best_child()
+
+        return node
+
+    def find_best_child(self):
+
+        node = self
+
+        ucb_values = [children.find_ucb1() for children in node.child]
+        if None in ucb_values:
+            node = node.child[np.random.randint(len(node.child))]
+        else:
+            node = node.child[np.argmax(ucb_values)]
 
         return node
 
@@ -73,14 +82,13 @@ class Tree_Node:
         cols = valid_columns(self.board)
         win = False
         node = self
-
         if not self.terminal and cols is not None:
             old_board = self.board.copy()
             if cols.size > 1:
                 for i, column in enumerate(cols):
                     board = old_board.copy()
-                    position = apply_player_action(board, column, player=change_player(self.turn_player), copy=False,
-                                                   pos=True)
+                    apply_player_action(board, column, player=change_player(self.turn_player), copy=False,
+                                                   pos=False)
                     self.new_child(Tree_Node(board, column, parent=self, turn_player=change_player(self.turn_player)),
                                    main_player)
             else:
@@ -92,6 +100,7 @@ class Tree_Node:
 
             winning_nodes = self.check_winning_children()
 
+
             if len(winning_nodes) > 0:
                 ind = int(np.random.randint(cols.size))
                 node = self.child[ind]
@@ -99,7 +108,12 @@ class Tree_Node:
             else:
                 ind = int(np.random.randint(cols.size))
                 node = self.child[ind]
+                old_board = node.board.copy()
+                start2 = time.time()
                 win = win_game(node.board, main_player, node.turn_player)
+                # print(f'Time: {time.time() - start2}')
+                node.board = old_board
+
 
         elif self.terminal and cols is not None:
             if node.winner:
@@ -114,6 +128,8 @@ class Tree_Node:
         # root = node.back_prop(win)
         node.back_prop(win)
 
+        return node
+
     def back_prop(self, winning):
 
         parent = self
@@ -125,6 +141,15 @@ class Tree_Node:
                 parent.wins += 1
 
             parent = parent.parent
+
+    def opponent_choice(self, action):
+
+        moves = [children.move for children in self.child]
+        ind_opponent_move = int(np.argwhere(moves == action))
+        child_opponent = self.child[ind_opponent_move]
+
+        return child_opponent
+
 
 
 def column_free(board, column):

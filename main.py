@@ -37,6 +37,7 @@ def human_vs_agent(
     from agents.common import PLAYER1, PLAYER2, PLAYER1_PRINT, PLAYER2_PRINT, GameState
     from agents.common import initialize_game_state, pretty_print_board, apply_player_action, check_end_state
 
+    action = None
     players = (PLAYER1, PLAYER2)
     for play_first in (1, -1):
         for init, player in zip((init_1, init_2)[::play_first], players):
@@ -53,6 +54,7 @@ def human_vs_agent(
             machine_player = PLAYER2
 
         playing = True
+
         while playing:
             for player, player_name, gen_move, args in zip(
                 players, player_names, gen_moves, gen_args,
@@ -63,9 +65,13 @@ def human_vs_agent(
                 print(
                     f'{player_name} you are playing with {PLAYER1_PRINT if player == PLAYER1 else PLAYER2_PRINT}'
                 )
-                action, saved_state[player] = gen_move(
-                    board.copy(), player, saved_state[player], *args
-                )
+                if machine_player == player :
+                    action, saved_state[player] = gen_move(
+                        board.copy(), player, saved_state[player], action
+                    )
+                else:
+                    action, saved_state[player] = gen_move(
+                        board.copy(), player, saved_state[player])
                 print(f"Move time: {time.time() - t0:.3f}s")
                 apply_player_action(board, action, player)
                 end_state = check_end_state(board, player)

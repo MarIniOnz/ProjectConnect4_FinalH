@@ -26,7 +26,7 @@ def generate_move_random(board: np.ndarray, player: BoardPiece, saved_state: Opt
     while not exit_yes:
         action = PlayerAction(np.random.randint(7))
         old_board, position = apply_player_action(old_board, action, player, True, True)
-        if position != 0:
+        if position is not None:
             exit_yes = True
     
     return action, saved_state
