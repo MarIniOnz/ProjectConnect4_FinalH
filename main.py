@@ -6,13 +6,6 @@ from agents.agent_minimax.minimax import minimax_action
 from agents.agents_random.random import generate_move_random
 from agents.agent_Monte_Carlo.montecarlo_exec import montecarlo
 
-board_values = np.array([[3,4,5,7,5,4,3],
-                [4,6,8,10,8,6,4],
-                [5,8,11,13,11,8,5],
-                [5,8,11,13,11,8,5],
-                [4,6,8,10,8,6,4],
-                [3,4,5,7,5,4,3]])
-
 def user_move(board: np.ndarray, _player: BoardPiece, saved_state: Optional[SavedState]):
     action = PlayerAction(-1)
     while not 0 <= action < board.shape[1]:

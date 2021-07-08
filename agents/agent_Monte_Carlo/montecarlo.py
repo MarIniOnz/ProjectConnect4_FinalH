@@ -40,7 +40,8 @@ class Tree_Node:
         if self.total_games == 0:
             return None
         else:
-            ucb1 = self.wins / self.total_games + np.sqrt(2 * np.log(self.parent.total_games) / self.total_games)
+            ucb1 = self.wins / self.total_games
+            ucb1 = self.wins / self.total_games + np.sqrt(0.5 * np.log(self.parent.total_games) / self.total_games)
             return ucb1
 
     def select_node(self):
@@ -67,7 +68,7 @@ class Tree_Node:
 
     def check_winning_children(self):
 
-        booleans = np.empty(7)
+        booleans = np.empty(len(self.child))
         for i, children in enumerate(self.child):
             booleans[i] = children.winner
         winners = np.argwhere(booleans)
@@ -77,11 +78,24 @@ class Tree_Node:
         else:
             return winners
 
+    def check_losing_children(self):
+
+        booleans = np.empty(len(self.child))
+        for i, children in enumerate(self.child):
+            booleans[i] = children.loser
+        losers = np.argwhere(booleans)
+
+        if len(losers) == 0:
+            return []
+        else:
+            return losers
+
     def expansion_and_back_prop(self, main_player):
 
         cols = valid_columns(self.board)
         win = False
         node = self
+
         if not self.terminal and cols is not None:
             old_board = self.board.copy()
             if cols.size > 1:
@@ -99,21 +113,25 @@ class Tree_Node:
                                main_player)
 
             winning_nodes = self.check_winning_children()
-
+            losing_nodes = self.check_losing_children()
 
             if len(winning_nodes) > 0:
                 ind = int(np.random.randint(cols.size))
                 node = self.child[ind]
                 win = node.winner
+
             else:
                 ind = int(np.random.randint(cols.size))
                 node = self.child[ind]
                 old_board = node.board.copy()
-                start2 = time.time()
+                # start2 = time.time()
                 win = win_game(node.board, main_player, node.turn_player)
                 # print(f'Time: {time.time() - start2}')
                 node.board = old_board
 
+            if len(losing_nodes) > 0:
+                node.wins -= node.wins
+                node.terminal = True
 
         elif self.terminal and cols is not None:
             if node.winner:
@@ -121,11 +139,8 @@ class Tree_Node:
 
         elif not self.terminal and cols is None:
             self.terminal = True
+            print('lol')
 
-        # else:
-            # print('Finished interrogating')
-
-        # root = node.back_prop(win)
         node.back_prop(win)
 
         return node
@@ -153,7 +168,8 @@ class Tree_Node:
 
 
 def column_free(board, column):
-    return (sum(board[:, column] == 0) - 1) > 0
+
+    return (sum(board[:, column] == 0) - 1) >= 0
 
 
 def valid_columns(board):

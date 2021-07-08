@@ -11,5 +11,8 @@
   "test_minimax.py::test_min_child",
   "test_minimax.py::test_minimax_action",
   "test_minimax.py::test_minmax_tree",
+  "test_montecarlo.py::test_Tree_Node",
+  "test_montecarlo.py::test_column_free",
+  "test_montecarlo.py::test_valid_columns",
   "test_random.py::test_random"
 ]
