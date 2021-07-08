@@ -1,0 +1,99 @@
+import numpy as np
+from typing import Optional
+from typing import Callable
+from agents.common import PlayerAction, BoardPiece, SavedState, GenMove
+from agents.agent_minimax.minimax import minimax_action
+from agents.agents_random.random import generate_move_random
+from agents.agent_Monte_Carlo.montecarlo_exec import montecarlo
+
+board_values = np.array([[3,4,5,7,5,4,3],
+                [4,6,8,10,8,6,4],
+                [5,8,11,13,11,8,5],
+                [5,8,11,13,11,8,5],
+                [4,6,8,10,8,6,4],
+                [3,4,5,7,5,4,3]])
+
+def user_move(board: np.ndarray, _player: BoardPiece, saved_state: Optional[SavedState]):
+    action = PlayerAction(-1)
+    while not 0 <= action < board.shape[1]:
+        try:
+            action = PlayerAction(input("Column? "))
+        except ValueError:
+            print("Input could not be converted to the dtype PlayerAction, try entering an integer.")
+    return action, saved_state
+
+
+def human_vs_agent(
+    generate_move_1: GenMove,
+    generate_move_2: GenMove ,
+    player_1: str = "Player 1",
+    player_2: str = "Player 2",
+    args_1: tuple = (),
+    args_2: tuple = (),
+    init_1: Callable = lambda board, player: None,
+    init_2: Callable = lambda board, player: None,
+):
+    import time
+    from agents.common import PLAYER1, PLAYER2, PLAYER1_PRINT, PLAYER2_PRINT, GameState
+    from agents.common import initialize_game_state, pretty_print_board, apply_player_action, check_end_state
+
+    wins = 0
+    players = (PLAYER1, PLAYER2)
+    for play_first in (1, -1):
+        for init, player in zip((init_1, init_2)[::play_first], players):
+            init(initialize_game_state(), player)
+
+        saved_state = {PLAYER1: None, PLAYER2: None}
+        board = initialize_game_state()
+        gen_moves = (generate_move_1, generate_move_2)[::play_first]
+        player_names = (player_1, player_2)[::play_first]
+        gen_args = (args_1, args_2)[::play_first]
+        if play_first == 1:
+            machine_player = PLAYER1
+        else:
+            machine_player = PLAYER2
+
+        playing = True
+        while playing:
+            for player, player_name, gen_move, args in zip(
+                players, player_names, gen_moves, gen_args,
+            ):
+                print(player,player_name)
+                t0 = time.time()
+                print(pretty_print_board(board))
+                print(
+                    f'{player_name} you are playing with {PLAYER1_PRINT if player == PLAYER1 else PLAYER2_PRINT}'
+                )
+                action, saved_state[player] = gen_move(
+                    board.copy(), player, saved_state[player], *args
+                )
+                print(f"Move time: {time.time() - t0:.3f}s")
+                apply_player_action(board, action, player)
+                end_state = check_end_state(board, player)
+                if end_state != GameState.STILL_PLAYING:
+                    print(pretty_print_board(board))
+                    if end_state == GameState.IS_DRAW:
+                        print("Game ended in draw")
+                    else:
+                        print(
+                            f'{player_name} won playing {PLAYER1_PRINT if player == PLAYER1 else PLAYER2_PRINT}'
+                        )
+                        if player_name == player_1:
+                            wins += 1
+                    playing = False
+
+
+                    break
+    return wins
+
+
+if __name__ == "__main__":
+    # human_vs_agent(minimax_action,generate_move_random)
+    # human_vs_agent(minimax_action,user_move)
+    n = 50
+    total_wins = 0
+
+    for i in range(n):
+        wins = human_vs_agent(montecarlo, generate_move_random)
+        total_wins += wins
+        print('Total wins = '+ str(total_wins))

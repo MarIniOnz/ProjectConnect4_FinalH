@@ -1,0 +1,2 @@
+# PyCharm project settings
+.idea/
