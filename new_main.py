@@ -26,6 +26,7 @@ def user_move(board: np.ndarray, _player: BoardPiece, saved_state: Optional[Save
 def human_vs_agent(
     generate_move_1: GenMove,
     generate_move_2: GenMove ,
+    train_time,
     player_1: str = "Player 1",
     player_2: str = "Player 2",
     args_1: tuple = (),
@@ -67,7 +68,7 @@ def human_vs_agent(
                 )
                 if machine_player == player:
                     action, saved_state[player] = gen_move(
-                        board.copy(), player, saved_state[player], action
+                        board.copy(), player, saved_state[player], action, train_time
                     )
                 else:
                     action, saved_state[player] = gen_move(
@@ -96,9 +97,13 @@ if __name__ == "__main__":
     # human_vs_agent(minimax_action,generate_move_random)
     # human_vs_agent(minimax_action,user_move)
     n = 50
-    total_wins = 0
-
-    for i in range(n):
-        wins = human_vs_agent(montecarlo, generate_move_random)
-        total_wins += wins
-        print('Total wins = '+ str(total_wins))
+    secs = np.arange(2,11)
+    winning = np.zeros(len(secs))
+    for j in range(len(secs)):
+        total_wins = 0
+        for i in range(n):
+            wins = human_vs_agent(montecarlo, generate_move_random,secs[j])
+            total_wins += wins
+            print('Total wins = '+ str(total_wins))
+        winning[j] = total_wins
+    print(winning)

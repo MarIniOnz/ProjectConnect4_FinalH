@@ -49,7 +49,8 @@ GenMove = Callable[
 def initialize_game_state() -> np.ndarray:
     """ Initializes C4 board.
 
-    Returns an ndarray, shape (6, 7) and data type (dtype) BoardPiece, initialized to 0 (NO_PLAYER).
+    Returns an array, shape (6, 7) and data type (data type) BoardPiece, initialized to 0 (NO_PLAYER).
+    Apparently the board is flipped here in comparison to the given convention.
 
     Returns:
         board: Initialized board with no pieces on it.
@@ -117,7 +118,7 @@ def pretty_print_board(board: np.ndarray) -> str:
 def string_to_board(pp_board: str) -> np.ndarray:
     """ String board to matrix values in an array.
 
-    Takes the output of 'pretty_print_board' and turns it back into an 'ndarray'.
+    Takes the output of 'pretty_print_board' and turns it back into an array.
     This is quite useful for debugging, when the agent crashed and you have the last
     board state as a string.
 
@@ -144,11 +145,11 @@ def string_to_board(pp_board: str) -> np.ndarray:
                     line_np = np.append(line_np, PLAYER1)
                 elif line[j] == PLAYER2_PRINT:
                     line_np = np.append(line_np, PLAYER2)
-            if line_np!=[]:
+            if line_np:
                 board_out = np.hstack((board_out, line_np))
 
     board_out = board_out[1::]
-    board_out = board_out.reshape(6,7)
+    board_out = board_out.reshape(6, 7)
 
     return board_out
 
@@ -171,11 +172,8 @@ def apply_player_action(
     Returns:
         old_board: Copy of the board before a new piece was introduced.
         position: Position of the new piece. Returns None if the column was full.
-        # Remark: that's a dangerous choice
 
     """
-    # Remark: If copy is true, board shouldn't be modified at all!
-    # Remark: you flipped the board compared to my convention. That's not a problem as such, but you should explain your new convention somewhere.
     old_board = np.copy(board)
     row = np.sum(board[:, action] == 0) - 1
     position = None
@@ -193,7 +191,7 @@ def apply_player_action(
         return None
 
 
-def findall(element: BoardPiece, board: np.array):  # Remark: type hints missing
+def findall(element: BoardPiece, board: np.array) -> np.ndarray:
     """ Checks whether there is an element in a matrix and if so, return their indexes.
 
     Args:
@@ -216,7 +214,7 @@ def findall(element: BoardPiece, board: np.array):  # Remark: type hints missing
     return res
 
 
-def connected_four(board: np.ndarray, player: BoardPiece) -> bool:
+def connected_four(board: np.ndarray, player: BoardPiece, last_action: PlayerAction = None) -> bool:
     """ Check if there are 4 connected pieces in the board for the player.
 
     Returns True if there are four adjacent pieces equal to `player` arranged
@@ -227,26 +225,30 @@ def connected_four(board: np.ndarray, player: BoardPiece) -> bool:
     Args:
         board: Current state of the board.
         player: Whose turn is it.
+        last_action: Last action taken.
     Returns:
         bool: True if there are at least 4 connected pieces, False otherwise
 
     """
-    # Remark: last_action flag not used
-    indexes = findall(player, board)
+    if last_action is None:
+        indexes = findall(player, board)
+    else:
+        indexes = np.array([[np.sum(board[:, last_action] == 0), last_action]])
+
     x, y = np.shape(board)
 
     dirs = np.array([[1, 1], [1, -1], [1, 0], [0, 1]])  # Directions to inspect the board.
     sums = np.zeros((indexes.shape[0], 4))
 
     for i in range(0, indexes.shape[0]):
-        for j in range(0, 4): # Remark you could loop over dirs here
+        for j in range(0, 4):
             new_ind = indexes[i]
             dim = False
             break_0 = False
 
             while not break_0 and not dim:
                 if new_ind[0] > x - 1 or new_ind[1] > y - 1 or new_ind[0] < 0 or new_ind[1] < 0:
-                    dim = True  # Remark: when would this ever be the case?
+                    dim = True
                 elif player != board[new_ind[0], new_ind[1]]:
                     break_0 = True
                 else:
@@ -257,10 +259,6 @@ def connected_four(board: np.ndarray, player: BoardPiece) -> bool:
             sums[i, j] -= 1
             new_ind = indexes[i]
 
-            # Remark: you don't actually need to check the negative directions!
-            #         in fact, you could even restrict your list of indices (e.g., for horizontal patterns, it's enough
-            #         to only start the search for squares in the first four columns (and then move to the right during the search).
-            #         This should cover everything
             while not break_0 and not dim:
                 if new_ind[0] > x - 1 or new_ind[1] > y - 1 or new_ind[0] < 0 or new_ind[1] < 0:
                     dim = True
@@ -276,7 +274,7 @@ def connected_four(board: np.ndarray, player: BoardPiece) -> bool:
         return False
 
 
-def check_end_state(board: np.ndarray, player: BoardPiece) -> object:
+def check_end_state(board: np.ndarray, player: BoardPiece, last_action: PlayerAction = None) -> object:
     """ Checks the state of the game.
 
     Returns the current game state for the current `player`, i.e. has their last
@@ -284,17 +282,18 @@ def check_end_state(board: np.ndarray, player: BoardPiece) -> object:
     or is play still on-going (GameState.STILL_PLAYING)?
 
     Args:
-        board: Current state of the board
+        board: Current state of the board.
         player: Whose turn is it.
+        last_action: Last action taken in the game.
     Returns:
         state_game: GameState.IS_WIN if player won, GameState. Otherwise,
                     GameState.STILL_PLAYING or GameState.IS_DRAW if board is full.
     """
     state_game = GameState.STILL_PLAYING
 
-    if connected_four(board, player):
+    if connected_four(board, player, last_action):
         state_game = GameState.IS_WIN
-    elif np.sum(board == 0) == 0 and not connected_four(board, player):
+    elif np.sum(board == 0) == 0 and not connected_four(board, player, last_action):
         state_game = GameState.IS_DRAW
 
     return state_game

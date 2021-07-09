@@ -1,45 +1,41 @@
 import numpy as np
 import time
-from agents.common import BoardPiece, apply_player_action
-from agents.agent_Monte_Carlo.montecarlo import Tree_Node, change_player
-
-def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, action):
+from agents.common import BoardPiece, apply_player_action, PlayerAction
+from agents.agent_Monte_Carlo.montecarlo import TreeNode, change_player
 
 
+def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, last_action: PlayerAction, train_time=5):
     # Time counter for the while loop.
-    start = int(round(time.time()))
-    train_time = 5
-    n = 2000
+    # train_time = 5
+    # n = 2000
     num = 0
 
-    if action is None:
-        action = 3
+    if last_action is None:
+        action = PlayerAction(3)
         apply_player_action(board, action, player, copy=False, pos=False)
-        root = Tree_Node(board, 3, None, player)
+        root = TreeNode(board, 3, None, player)
         node = root.select_node()
         node.expansion_and_back_prop(player)
         saved_state = root
+
     else:
         if saved_state is None:
-            root = Tree_Node(board, action, None, change_player(player))
+            root = TreeNode(board, last_action, None, change_player(player))
 
         else:
             try:
-                root = saved_state.opponent_choice(action)
+                root = saved_state.opponent_choice(last_action)
             except:
-                root = Tree_Node(board, action, None, change_player(player))
+                root = TreeNode(board, last_action, None, change_player(player))
 
         start = int(round(time.time()))
         present = int(round(time.time()))
 
-        while (present-start) < train_time:
-        # while num < 500:
-
+        while (present - start) < train_time:
             node = root.select_node()
             node.expansion_and_back_prop(player)
             present = int(round(time.time()))
             num += 1
-
 
         best_child = root.find_best_child()
         saved_state = best_child
@@ -48,6 +44,3 @@ def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, action):
     print(root.total_games)
 
     return action, saved_state
-
-
-

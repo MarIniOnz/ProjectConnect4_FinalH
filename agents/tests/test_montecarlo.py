@@ -2,10 +2,10 @@ import numpy as np
 from agents.common import GameState, BoardPiece,PlayerAction
 
 def test_Tree_Node():
-    from agents.agent_Monte_Carlo.montecarlo import Tree_Node
+    from agents.agent_Monte_Carlo.montecarlo import TreeNode
 
     # board = Init
-    # tree = Tree_Node()
+    # tree = TreeNode()
 
 def test_column_free():
     from agents.agent_Monte_Carlo.montecarlo import column_free
