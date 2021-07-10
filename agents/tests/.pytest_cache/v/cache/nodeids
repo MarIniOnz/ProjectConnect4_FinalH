@@ -11,8 +11,16 @@
   "test_minimax.py::test_min_child",
   "test_minimax.py::test_minimax_action",
   "test_minimax.py::test_minmax_tree",
+  "test_montecarlo.py::test_TreeNode",
   "test_montecarlo.py::test_Tree_Node",
+  "test_montecarlo.py::test_blank_board",
+  "test_montecarlo.py::test_change_player",
   "test_montecarlo.py::test_column_free",
+  "test_montecarlo.py::test_establish_root",
+  "test_montecarlo.py::test_montecarlo",
+  "test_montecarlo.py::test_new_child",
+  "test_montecarlo.py::test_random_game",
+  "test_montecarlo.py::test_same_player",
   "test_montecarlo.py::test_valid_columns",
   "test_random.py::test_random"
 ]

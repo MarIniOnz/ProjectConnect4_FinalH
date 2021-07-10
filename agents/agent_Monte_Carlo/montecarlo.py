@@ -241,6 +241,9 @@ class TreeNode:
         """
         move_needed = self.child[int(losing_nodes[0])].move
         node = self.parent.opponent_choice(move_needed)
+
+        # This node is thought to be terminal as it is assumed the opponent will
+        # choose the winning move.
         self.terminal = True
         self.loser = True
         self.wins = 0
@@ -478,6 +481,8 @@ def random_game(board, main_player, turn_player):
     while state == GameState.STILL_PLAYING:
         move, _ = generate_move_random(board, turn_player, None)
         apply_player_action(board, move, turn_player)
+
+        # Checking whether the game has come to an end
         if check_end_state(board, turn_player, move) == GameState.IS_WIN:
             state = GameState.IS_WIN
         elif check_end_state(board, turn_player, move) == GameState.IS_DRAW:
@@ -485,6 +490,7 @@ def random_game(board, main_player, turn_player):
         else:
             turn_player = change_player(turn_player)  # Next turn, change of players.
 
+    # There is only a win if the player that won in the last turn is the same as the main player.
     if same_player(turn_player, main_player) and state == GameState.IS_WIN:
         win = True
 

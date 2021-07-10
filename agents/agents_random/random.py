@@ -1,23 +1,28 @@
-from agents.common import PlayerAction, BoardPiece, SavedState, apply_player_action
+from agents.common import PlayerAction, BoardPiece, apply_player_action
 import numpy as np
-from typing import Optional
 
 
-def generate_move_random(board: np.ndarray, player: BoardPiece, saved_state: Optional[SavedState]):
-    """Random getting a board and the corresponding player turn and returning
-          a non-full column.
+def generate_move_random(board, player, saved_state=None):
+    """Random getting a board and the corresponding player turn and returning a non-full column.
 
-       Yields a non-full column action to be performed considering the board state.
-       Args:
-           board: Current state of the board
-           player: Whose turn is it.
-           saved_state: Optimal pre-computation work performed in previous steps.
+    Yields a non-full column action to be performed considering the board state.
 
-       Returns:
-           action: Column to use.
-           saved_state: Not-yet implemented, but needed for the main.py algorithm.
+    Parameters
+    ----------
+    board: np.array
+        current state of the board
+    player: BoardPiece
+        whose turn is it
+    saved_state: None
+        not needed for a random generator
 
-       """
+    Returns
+    -------
+    action: PlayAction
+        Column to use.
+    saved_state: None.
+        not needed for a random generator
+    """
 
     exit_yes = False
     old_board = board.copy()
