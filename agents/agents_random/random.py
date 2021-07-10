@@ -1,4 +1,4 @@
-from agents.common import PlayerAction, BoardPiece, SavedState, GenMove, apply_player_action
+from agents.common import PlayerAction, BoardPiece, SavedState, apply_player_action
 import numpy as np
 from typing import Optional
 

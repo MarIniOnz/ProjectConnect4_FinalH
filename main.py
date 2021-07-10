@@ -2,8 +2,7 @@ import numpy as np
 from typing import Optional
 from typing import Callable
 from agents.common import PlayerAction, BoardPiece, SavedState, GenMove
-from agents.agent_minimax.minimax import minimax_action
-from agents.agents_random.random import generate_move_random
+# from agents.agents_random.random import generate_move_random
 from agents.agent_Monte_Carlo.montecarlo_exec import montecarlo
 
 

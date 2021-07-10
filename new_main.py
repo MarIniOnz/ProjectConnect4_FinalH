@@ -2,16 +2,17 @@ import numpy as np
 from typing import Optional
 from typing import Callable
 from agents.common import PlayerAction, BoardPiece, SavedState, GenMove
-from agents.agent_minimax.minimax import minimax_action
+# from agents.agent_minimax.minimax import minimax_action
 from agents.agents_random.random import generate_move_random
 from agents.agent_Monte_Carlo.montecarlo_exec import montecarlo
 
-board_values = np.array([[3,4,5,7,5,4,3],
-                [4,6,8,10,8,6,4],
-                [5,8,11,13,11,8,5],
-                [5,8,11,13,11,8,5],
-                [4,6,8,10,8,6,4],
-                [3,4,5,7,5,4,3]])
+board_values = np.array([[3, 4, 5, 7, 5, 4, 3],
+                         [4, 6, 8, 10, 8, 6, 4],
+                         [5, 8, 11, 13, 11, 8, 5],
+                         [5, 8, 11, 13, 11, 8, 5],
+                         [4, 6, 8, 10, 8, 6, 4],
+                         [3, 4, 5, 7, 5, 4, 3]])
+
 
 def user_move(board: np.ndarray, _player: BoardPiece, saved_state: Optional[SavedState]):
     action = PlayerAction(-1)
@@ -19,26 +20,26 @@ def user_move(board: np.ndarray, _player: BoardPiece, saved_state: Optional[Save
         try:
             action = PlayerAction(input("Column? "))
         except ValueError:
-            print("Input could not be converted to the dtype PlayerAction, try entering an integer.")
+            print("Input could not be converted to the data type PlayerAction, try entering an integer.")
     return action, saved_state
 
 
 def human_vs_agent(
-    generate_move_1: GenMove,
-    generate_move_2: GenMove ,
-    train_time,
-    player_1: str = "Player 1",
-    player_2: str = "Player 2",
-    args_1: tuple = (),
-    args_2: tuple = (),
-    init_1: Callable = lambda board, player: None,
-    init_2: Callable = lambda board, player: None,
+        generate_move_1: GenMove,
+        generate_move_2: GenMove,
+        train_time,
+        player_1: str = "Player 1",
+        player_2: str = "Player 2",
+        args_1: tuple = (),
+        args_2: tuple = (),
+        init_1: Callable = lambda board, player: None,
+        init_2: Callable = lambda board, player: None,
 ):
     import time
     from agents.common import PLAYER1, PLAYER2, PLAYER1_PRINT, PLAYER2_PRINT, GameState
     from agents.common import initialize_game_state, pretty_print_board, apply_player_action, check_end_state
 
-    wins = 0
+    win_games = 0
     action = None
     players = (PLAYER1, PLAYER2)
     for play_first in (1, -1):
@@ -58,9 +59,9 @@ def human_vs_agent(
         playing = True
         while playing:
             for player, player_name, gen_move, args in zip(
-                players, player_names, gen_moves, gen_args,
+                    players, player_names, gen_moves, gen_args,
             ):
-                print(player,player_name)
+                print(player, player_name)
                 t0 = time.time()
                 print(pretty_print_board(board))
                 print(
@@ -85,25 +86,24 @@ def human_vs_agent(
                             f'{player_name} won playing {PLAYER1_PRINT if player == PLAYER1 else PLAYER2_PRINT}'
                         )
                         if player_name == player_1:
-                            wins += 1
+                            win_games += 1
                     playing = False
 
-
                     break
-    return wins
+    return win_games
 
 
 if __name__ == "__main__":
     # human_vs_agent(minimax_action,generate_move_random)
     # human_vs_agent(minimax_action,user_move)
     n = 50
-    secs = np.arange(2,11)
+    secs = np.arange(5, 11)
     winning = np.zeros(len(secs))
     for j in range(len(secs)):
         total_wins = 0
         for i in range(n):
-            wins = human_vs_agent(montecarlo, generate_move_random,secs[j])
+            wins = human_vs_agent(montecarlo, generate_move_random, secs[j])
             total_wins += wins
-            print('Total wins = '+ str(total_wins))
+            print('Total wins = ' + str(total_wins))
         winning[j] = total_wins
     print(winning)
