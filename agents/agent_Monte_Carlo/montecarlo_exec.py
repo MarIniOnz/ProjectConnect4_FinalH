@@ -5,10 +5,6 @@ from agents.agent_Monte_Carlo.montecarlo import TreeNode, change_player, back_pr
 
 
 def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, last_action: PlayerAction, train_time=5):
-    # Time counter for the while loop.
-    # train_time = 3
-    # n = 2000
-    num = 0
 
     if last_action is None:
         action, saved_state = blank_board(board, player)
@@ -24,7 +20,6 @@ def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, last_action: 
             node, win = node.expansion(player)
             back_prop(node, win)
             present = int(round(time.time()))
-            num += 1
 
         best_child = root.find_best_child()
         saved_state = best_child
