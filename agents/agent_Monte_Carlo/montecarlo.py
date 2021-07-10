@@ -15,9 +15,9 @@ class TreeNode:
         state of the board (matrix)
     move: PlayerAction
         move performed on the board in that turn
-    parent: TreeNode or None
+    parent: TreeNode
         parent node in the hierarchy
-    child: TreeNode or None
+    child: TreeNode
         child nodes in the hierarchy
     turn_player: BoardPiece
         player who played this turn (last move on board).
@@ -31,8 +31,7 @@ class TreeNode:
         whether this node is a losing node (losing combination of pieces already in the board) (default is False)
     terminal: bool
         whether this is a terminal node (losing/winning/draw) (default is False)
-    is_root: bool
-        whether this node is the is_root of this stage of the game
+
     Methods
     -------
     new_child(children, main_player, last_action)
@@ -46,7 +45,7 @@ class TreeNode:
         ----------
         board : np.array
             State of the board (matrix)
-        parent: TreeNode or None
+        parent: TreeNode
             Parent node in the hierarchy
         move: PlayerAction
             Move performed on the board in that turn
@@ -65,7 +64,6 @@ class TreeNode:
         self.winner = False
         self.loser = False
         self.terminal = False
-        self.is_root = False
 
     def new_child(self, children, main_player):
         """Appending new children to the tree, using self as the parent.
@@ -256,17 +254,17 @@ class TreeNode:
 
         return node, win
 
-
 def back_prop(node, winning):
 
     parent = node
 
-    while parent.is_root is False:
-        parent = parent.parent
+    while parent is not None:
         parent.total_games += 1
 
         if winning:
             parent.wins += 1
+
+        parent = parent.parent
 
 
 def column_free(board, column):

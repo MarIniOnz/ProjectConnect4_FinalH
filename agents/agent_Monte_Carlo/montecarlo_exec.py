@@ -14,7 +14,6 @@ def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, last_action: 
         action = PlayerAction(3)
         apply_player_action(board, action, player, copy=False, pos=False)
         root = TreeNode(board, action, None, player)
-        root.is_root = True
         node = root.select_node()
         node.expansion(player)
         saved_state = root
@@ -22,15 +21,12 @@ def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, last_action: 
     else:
         if saved_state is None:
             root = TreeNode(board, last_action, None, change_player(player))
-            root.is_root = True
 
         else:
             try:
                 root = saved_state.opponent_choice(last_action)
-                root.is_root = True
             except:
                 root = TreeNode(board, last_action, None, change_player(player))
-                root.is_root = True
 
         start = int(round(time.time()))
         present = int(round(time.time()))
