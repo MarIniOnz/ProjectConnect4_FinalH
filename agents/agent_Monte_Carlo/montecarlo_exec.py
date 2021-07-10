@@ -11,22 +11,10 @@ def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, last_action: 
     num = 0
 
     if last_action is None:
-        action = PlayerAction(3)
-        apply_player_action(board, action, player, copy=False, pos=False)
-        root = TreeNode(board, action, None, player)
-        node = root.select_node()
-        node.expansion(player)
-        saved_state = root
+        action, saved_state = blank_board(board, player)
 
     else:
-        if saved_state is None:
-            root = TreeNode(board, last_action, None, change_player(player))
-
-        else:
-            try:
-                root = saved_state.opponent_choice(last_action)
-            except:
-                root = TreeNode(board, last_action, None, change_player(player))
+        root = establish_root(board, player, saved_state, last_action)
 
         start = int(round(time.time()))
         present = int(round(time.time()))
@@ -42,6 +30,34 @@ def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, last_action: 
         saved_state = best_child
         action = best_child.move
 
-    print(root.total_games)
+        print(root.total_games)
 
     return action, saved_state
+
+
+def blank_board(board, player: BoardPiece):
+
+    action = PlayerAction(3)
+    apply_player_action(board, action, player, copy=False, pos=False)
+    root = TreeNode(board, action, None, player)
+    node = root.select_node()
+    node.expansion(player)
+    saved_state = root
+
+    return action, saved_state
+
+
+def establish_root(board, player, saved_state, last_action):
+
+    if saved_state is None:
+        root = TreeNode(board, last_action, None, change_player(player))
+
+    else:
+        try:
+            root = saved_state.opponent_choice(last_action)
+            root.parent = None
+        except:
+            root = TreeNode(board, last_action, None, change_player(player))
+            root.parent = None
+
+    return root

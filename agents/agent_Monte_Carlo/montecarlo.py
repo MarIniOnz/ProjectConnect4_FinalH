@@ -7,17 +7,15 @@ class TreeNode:
     """
     Tree structure class to store all nodes and their corresponding values.
 
-    ...
-
     Attributes
     ----------
-    board : np.array
+    board: np.array
         state of the board (matrix)
     move: PlayerAction
         move performed on the board in that turn
-    parent: TreeNode
+    parent: TreeNode or None
         parent node in the hierarchy
-    child: TreeNode
+    child: TreeNode or None
         child nodes in the hierarchy
     turn_player: BoardPiece
         player who played this turn (last move on board).
@@ -36,6 +34,22 @@ class TreeNode:
     -------
     new_child(children, main_player, last_action)
         Appending new children to the tree, using self as parent
+    find_ucb1()
+        Finding the node's upper confidence bound (UBC1)
+    find_best_child():
+        Finding the child of a node with best UCB value
+    select_node():
+        Performing the SELECTION step
+    check_winning_children():
+        Check whether any children node has a board winning combination
+    check_losing_children():
+        Check whether any children node has a board losing combination
+    opponent_choice(action):
+        Take the action made by the opponent and find which child of the node corresponds to that case
+    losing_case(losing_nodes):
+        Prevent losing scenarios by returning lose-preventing nodes
+    expansion(main_player):
+        Performs the EXPANSION of the algorithm
     """
 
     def __init__(self, board, move, parent, turn_player):
@@ -43,14 +57,14 @@ class TreeNode:
 
         Parameters
         ----------
-        board : np.array
-            State of the board (matrix)
-        parent: TreeNode
-            Parent node in the hierarchy
+        board: np.array
+            state of the board (matrix)
+        parent: TreeNode or None
+            parent node in the hierarchy
         move: PlayerAction
-            Move performed on the board in that turn
+            move performed on the board in that turn
         turn_player: BoardPiece
-            Player who played this turn (last move on board)
+            player who played this turn (last move on board)
         """
 
         self.board = board
@@ -145,7 +159,6 @@ class TreeNode:
         node = self
 
         while node.child is not None and not node.terminal:
-
             node = node.find_best_child()
 
         return node
@@ -177,7 +190,6 @@ class TreeNode:
         losers: list
             indexes of the winners which have a losing combination
         """
-
         booleans = np.empty(len(self.child))
         for i, children in enumerate(self.child):
             booleans[i] = children.loser
@@ -190,6 +202,19 @@ class TreeNode:
             return losers
 
     def opponent_choice(self, action):
+        """Take the action made by the opponent and find which child of the node
+           corresponds to that case.
+
+        Parameters
+        ----------
+        action: PlayerAction
+            action performed by the opponent
+
+        Returns
+        -------
+        child_opponent: TreeNode
+            child of the node corresponding to that move of the opponent
+        """
 
         moves = [children.move for children in self.child]
         ind_opponent_move = int(np.argwhere(moves == action))
@@ -197,62 +222,129 @@ class TreeNode:
 
         return child_opponent
 
-    def expansion(self, main_player):
+    def losing_case(self, losing_nodes):
+        """Prevent losing scenarios by returning lose-preventing nodes.
 
-        cols = valid_columns(self.board)
+        Take the action would make the opponent win, returns the node
+        that would prevent that from happening and makes the node that
+        would end up in the situation as a terminal, loser node.
+
+        Parameters
+        ----------
+        losing_nodes: list
+            indexes of the winners which have a losing combination
+
+        Returns
+        -------
+        node: TreeNode
+            node preventing the loss from happening.
+        """
+        move_needed = self.child[int(losing_nodes[0])].move
+        node = self.parent.opponent_choice(move_needed)
+        self.terminal = True
+        self.loser = True
+        self.wins = 0
+
+        return node
+
+    def expansion(self, main_player):
+        """Performs the EXPANSION of the algorithm.
+
+        Expands the tree from the self node if it is non-terminal by creating the children with
+        possible moves and detecting whether among them there are losing or winning nodes.
+        If there is a wining child, selects that node for the back propagation, if there is a losing
+        node, it selects the node preventing that lost and if there are none, performs a randomized
+        simulation using a random children node's board as start-point
+
+        Parameters
+        ----------
+        main_player: BoardPiece
+            piece of the player using this tree node (machine_player)
+
+        Returns
+        -------
+        node: TreeNode
+            node that performed the randomized simulation or a winning/preventing from losing node
+        win: bool
+            whether the outcome of the game of that node was a win
+        """
+        cols = valid_columns(self.board)  # Finding all possible moves
         win = False
         node = self
 
+        # Check whether it is possible to create new children
         if not self.terminal and cols is not None:
+
             old_board = self.board.copy()
             if cols.size > 1:
                 for i, column in enumerate(cols):
                     board = old_board.copy()
-
+                    # Create a child for each possible move
                     apply_player_action(board, column, player=change_player(self.turn_player))
                     self.new_child(TreeNode(board, PlayerAction(column), parent=self, turn_player=change_player(
-                                   self.turn_player)), main_player)
-            else:
+                        self.turn_player)), main_player)
+
+            else:  # in case there is only 1 column (had problems with this scenario, so i separated it)
                 board = old_board.copy()
                 apply_player_action(board, PlayerAction(cols), player=change_player(self.turn_player))
                 self.new_child(TreeNode(board, PlayerAction(cols), parent=self, turn_player=change_player(
-                               self.turn_player)), main_player)
+                    self.turn_player)), main_player)
 
+            # Check whether there are any winning or losing children
             winning_nodes = self.check_winning_children()
             losing_nodes = self.check_losing_children()
 
-            if len(losing_nodes) > 0:
-                move_needed = self.child[int(losing_nodes[0])].move
-                node = self.parent.opponent_choice(move_needed)
-                win = True
-                self.terminal = True
-                self.wins = 0
-                self.loser = True
+            # Both scenarios cannot happen at the same time, since both a loss and a win
+            # cannot happen at the same turn and winning/losing nodes are terminal
 
+            # If there are losing children, find the node that prevents it and treat it
+            # as a win (biasing the algorithm towards desiring this preventing node)
+            if len(losing_nodes) > 0:
+                node = self.losing_case(losing_nodes)
+                win = True
+
+            # If there are winning children, use them as the back propagating node so that
+            # system orients towards this node
             elif len(winning_nodes) > 0:
-                ind = int(np.random.randint(cols.size))
-                node = self.child[ind]
+                node = self.child[int(winning_nodes[0])]
                 win = node.winner
 
+            # If there are no winning nor losing nodes, pick a random children and simulate a
+            # a random game from that board state on.
             else:
                 ind = int(np.random.randint(cols.size))
                 node = self.child[ind]
                 old_board = node.board.copy()
-                if node.terminal == False:
-                    win = win_game(node.board, main_player, node.turn_player)
+                if node.terminal is False:
+                    win = random_game(node.board, main_player, node.turn_player)
                 node.board = old_board
 
+        # Check whether it is terminal because it is a winning or a losing node
         elif self.terminal and cols is not None:
             if node.winner:
                 win = node.winner
 
+        # If cols are None, it should be a terminal node
         elif not self.terminal and cols is None:
             self.terminal = True
 
         return node, win
 
-def back_prop(node, winning):
 
+def back_prop(node, winning):
+    """Performs the BACKPROPAGATION of the algorithm.
+
+    Propagates the results of simulations from lower nodes to higher in the hierarchy,
+    parental to them, as well as increasing the total games per node as back-propagating
+    occurs.
+
+    Parameters
+    ----------
+    node: TreeNode
+        node that performed the randomized simulation or a winning/preventing from losing node
+    winning: bool
+        whether the outcome of the game of that node was a win
+    """
     parent = node
 
     while parent is not None:
@@ -264,12 +356,39 @@ def back_prop(node, winning):
         parent = parent.parent
 
 
-def column_free(board, column):
+def column_free(board, column) -> bool:
+    """Check whether the column of a board is free.
 
-    return (sum(board[:, column] == 0) - 1) >= 0
+    Parameters
+    ----------
+    board: np.array
+        state of the board (matrix)
+    column: int
+        column to be checked in the board
+
+    Returns
+    -------
+    free: bool
+        whether the column is free to be used or not
+    """
+    free = (sum(board[:, column] == 0) - 1) >= 0
+
+    return free
 
 
 def valid_columns(board):
+    """Check which are the valid columns for moves.
+
+    Parameters
+    ----------
+    board: np.array
+        state of the board (matrix)
+
+    Returns
+    -------
+    ind: np.array or None
+        columns that can be used
+    """
     ind = None
     valid = False
 
@@ -281,42 +400,92 @@ def valid_columns(board):
             valid = True
         elif j_good and valid:
             ind = np.hstack((ind, j))
+
     if ind is not None:
-        return np.array(ind)
+        ind = np.array(ind)
+        return ind
     else:
-        return None
+        return ind
 
 
-def change_player(player: PlayerAction):
-    if player == BoardPiece(1):  # Finding out which player is who.
-        player = BoardPiece(2)
-    elif player == BoardPiece(2):
-        player = BoardPiece(1)
+def change_player(player) -> BoardPiece:
+    """Changes the player given the current one.
 
-    return player
+    Parameters
+    ----------
+    player: BoardPiece
+        given player
 
-
-def check_win(turn_player, player):
-    if turn_player == player:
-        return True
+    Returns
+    -------
+    other_player: BoardPiece
+        the other player
+    """
+    if player == BoardPiece(1):
+        other_player = BoardPiece(2)
     else:
-        return False
+        other_player = BoardPiece(1)
+
+    return other_player
 
 
-def win_game(board, player, turn_player):
-    win = GameState.STILL_PLAYING
+def same_player(turn_player, main_player):
+    """Checks whether the turn player is the same one as the main one.
 
-    while win == GameState.STILL_PLAYING:
+    Parameters
+    ----------
+    turn_player: BoardPiece
+        player of the turn
+    main_player: BoardPiece
+        main player
+
+    Returns
+    -------
+    same: bool
+        whether the player of this turn is the same as the main one
+    """
+    same = False
+    if turn_player == main_player:
+        same = True
+
+    return same
+
+
+def random_game(board, main_player, turn_player):
+    """Performs a randomized game.
+
+    A random game is performed from the board initial position until a final
+    position is reached. Then, it is checked whether on that final position,
+    the main player won or not (draw or loss).
+
+    Parameters
+    ----------
+    board: np.array
+        state of the board (matrix)
+    main_player: BoardPiece
+        main player
+    turn_player: BoardPiece
+        player of the turn
+
+    Returns
+    -------
+    win: bool
+        whether the main player won in the simulation
+    """
+    state = GameState.STILL_PLAYING
+    win = False
+
+    while state == GameState.STILL_PLAYING:
         move, _ = generate_move_random(board, turn_player, None)
         apply_player_action(board, move, turn_player)
         if check_end_state(board, turn_player, move) == GameState.IS_WIN:
-            win = GameState.IS_WIN
+            state = GameState.IS_WIN
         elif check_end_state(board, turn_player, move) == GameState.IS_DRAW:
-            win = GameState.IS_DRAW
+            state = GameState.IS_DRAW
         else:
-            turn_player = change_player(turn_player)
+            turn_player = change_player(turn_player)  # Next turn, change of players.
 
-    if check_win(turn_player, player) and win == GameState.IS_WIN:
-        return True
-    else:
-        return False
+    if same_player(turn_player, main_player) and state == GameState.IS_WIN:
+        win = True
+
+    return win
