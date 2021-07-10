@@ -6,7 +6,7 @@ from agents.agent_Monte_Carlo.montecarlo import TreeNode, change_player, back_pr
 
 def montecarlo(board: np.ndarray, player: BoardPiece, saved_state, last_action: PlayerAction, train_time=5):
     # Time counter for the while loop.
-    # train_time = 5
+    # train_time = 3
     # n = 2000
     num = 0
 

@@ -2,7 +2,7 @@ import numpy as np
 from typing import Optional
 from typing import Callable
 from agents.common import PlayerAction, BoardPiece, SavedState, GenMove
-# from agents.agents_random.random import generate_move_random
+from agents.agents_random.random import generate_move_random
 from agents.agent_Monte_Carlo.montecarlo_exec import montecarlo
 
 
@@ -58,7 +58,8 @@ def human_vs_agent(
                 print(
                     f'{player_name} you are playing with {PLAYER1_PRINT if player == PLAYER1 else PLAYER2_PRINT}'
                 )
-                if machine_player == player:
+
+                if machine_player == player:  # action argument is needed for the MonteCarlo algorithm.
                     action, saved_state[player] = gen_move(
                         board.copy(), player, saved_state[player], action
                     )
@@ -81,6 +82,5 @@ def human_vs_agent(
 
 
 if __name__ == "__main__":
-    # human_vs_agent(minimax_action,generate_move_random)
-    # human_vs_agent(minimax_action,user_move)
+    # human_vs_agent(montecarlo,generate_move_random)
     human_vs_agent(montecarlo, user_move)

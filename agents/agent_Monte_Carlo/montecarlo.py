@@ -224,9 +224,7 @@ class TreeNode:
             if len(losing_nodes) > 0:
                 move_needed = self.child[int(losing_nodes[0])].move
                 node = self.parent.opponent_choice(move_needed)
-                # node.wins += node.parent.total_games * 20
                 win = True
-                # node.total_games += 1
                 self.terminal = True
                 self.wins = 0
                 self.loser = True
@@ -240,9 +238,8 @@ class TreeNode:
                 ind = int(np.random.randint(cols.size))
                 node = self.child[ind]
                 old_board = node.board.copy()
-                # start2 = time.time()
-                win = win_game(node.board, main_player, node.turn_player)
-                # print(f'Time: {time.time() - start2}')
+                if node.terminal == False:
+                    win = win_game(node.board, main_player, node.turn_player)
                 node.board = old_board
 
         elif self.terminal and cols is not None:
